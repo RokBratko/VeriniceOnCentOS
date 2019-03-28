@@ -1,0 +1,93 @@
+{
+  "variables": {
+    "git_commit": "",
+    "url": "http://mirrors.xgroup.si/CentOS/7.6.1810/isos/x86_64/CentOS-7-x86_64-DVD-1810.iso",
+    "checksum": "6d44331cc4f6c506c7bbe9feb8468fad6c51a88ca1393ca6b8b486ea04bec3c1"
+  },
+  "provisioners": [
+    {
+      "type": "shell",
+      "execute_command": "sudo {{.Vars}} sh {{.Path}} {{user `git_commit`}}",
+      "scripts": [
+        "scripts/ansible.sh"
+      ]
+    },
+    {
+      "type": "ansible-local",
+      "playbook_file": "./ansible/local.yml",
+      "role_paths": [
+        "./ansible/roles/system"
+      ],
+      "inventory_file": "ansible/inventory"
+    },
+    {
+      "type": "shell",
+      "execute_command": "sudo {{.Vars}} sh {{.Path}}",
+      "scripts": [
+        "scripts/cleanup.sh",
+        "scripts/zerodisk.sh"
+      ]
+    }
+  ],
+  "post-processors": [
+    [ {
+      "type": "vsphere",
+      "cluster": "Cluster",
+      "datacenter": "vcenter_datacenter",
+      "datastore": "ds_data",
+      "disk_mode": "thin",
+      "host": "vcenter_host",
+      "password": "verinice",
+      "username": "verinice",
+      "vm_name": "Centos-7",
+      "vm_folder": "/",
+      "insecure": true,
+      "overwrite": true
+    },
+    {
+      "type": "vsphere-template",
+      "password": "verinice",
+      "username": "verinice",
+      "host": "vcenter_host",
+      "datacenter": "{{user `vcenter_datacenter`}}",
+      "insecure": true
+    } ]
+  ],
+  "builders": [
+    {
+      "type": "vmware-iso",
+      "format": "ovf",
+      "iso_url": "{{user `url`}}",
+      "iso_checksum": "{{user `checksum`}}",
+      "iso_checksum_type": "sha256",
+      "ssh_username": "vagrant",
+      "ssh_password": "vagrant",
+      "ssh_wait_timeout": "20m",
+      "disk_size": "40000",
+      "disk_type_id": "0",
+      "guest_os_type": "centos7-64",
+      "headless": false,
+      "shutdown_command": "sudo /sbin/halt -p",
+      "http_directory": "http",
+      "vmx_remove_ethernet_interfaces": true,
+      "boot_command": [
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter><wait>"
+      ],
+      "vmx_data": {
+        "memsize": "4096", 
+        "numvcpus": "2",
+        "ethernet0.present": true,
+        "ethernet0.startConnected": true,
+        "ethernet0.connectionType": "custom",
+        "ethernet0.vnet": "vmnet8",
+        "ethernet1.present": true,
+        "ethernet1.startConnected": true,
+        "ethernet1.connectionType": "custom",
+        "ethernet1.vnet": "vmnet1"
+      },
+      "vmx_data_post": {
+        "floppy0.present": false
+      }
+    }
+  ]
+}
