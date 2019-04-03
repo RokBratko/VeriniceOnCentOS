@@ -1,5 +1,5 @@
 ---
-- name: "Installing some stuff"
+- name: "Installing stuff"
   hosts: all
   become: True
 
@@ -12,7 +12,10 @@
         - yum-utils
         - device-mapper-persistent-data
         - lvm2
-
+    - name: command test
+      command: echo "the command module"
+    - name: custom directory
+      command: mkdir custom
     - name: "Installing repo"
       shell: "{{ item }}"
       args:
